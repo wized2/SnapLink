@@ -1,0 +1,9 @@
+{
+  "name": "snaplink",
+  "version": "1.0.0",
+  "dependencies": {
+    "@vercel/kv": "^1.0.1",
+    "formidable": "^3.5.1",
+    "node-fetch": "^3.3.2"
+  }
+}
