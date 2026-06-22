@@ -15,9 +15,18 @@ export async function onRequest(context) {
     }
 
     try {
-        // Get all link IDs from creator's set
-        const linkIds = await env.KV.smembers(`creator:${creatorId}`);
-        if (!linkIds || linkIds.length === 0) {
+        // Get the list of link IDs from the creator's key
+        const creatorKey = `creator:${creatorId}`;
+        const rawList = await env.KV.get(creatorKey);
+        let linkIds = [];
+        if (rawList) {
+            try {
+                const parsed = JSON.parse(rawList);
+                if (Array.isArray(parsed)) linkIds = parsed;
+            } catch (_) {}
+        }
+
+        if (linkIds.length === 0) {
             return new Response(JSON.stringify({ links: [] }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
@@ -48,6 +57,7 @@ export async function onRequest(context) {
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (err) {
+        console.error('Links error:', err);
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
