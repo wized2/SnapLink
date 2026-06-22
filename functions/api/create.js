@@ -2,6 +2,7 @@
  * POST /api/create
  * Creates a new link with a 6‑character ID and stores it in KV.
  * Links automatically expire after 15 days (1296000 seconds).
+ * Also updates the creator's list of link IDs (stored as JSON array).
  */
 export async function onRequest(context) {
     const { request, env } = context;
@@ -33,19 +34,34 @@ export async function onRequest(context) {
             captures: [],
         };
 
-        // Store with 15‑day TTL (1296000 seconds)
+        // Store link with 15‑day TTL
         await env.KV.put(`link:${linkId}`, JSON.stringify(linkData), {
             expirationTtl: 60 * 60 * 24 * 15,
         });
 
-        // Add link ID to creator's set
-        await env.KV.sadd(`creator:${creatorId}`, linkId);
+        // --- Update creator's link list ---
+        const creatorKey = `creator:${creatorId}`;
+        let linkIds = [];
+        try {
+            const raw = await env.KV.get(creatorKey);
+            if (raw) {
+                linkIds = JSON.parse(raw);
+                // Ensure it's an array
+                if (!Array.isArray(linkIds)) linkIds = [];
+            }
+        } catch (_) {
+            linkIds = [];
+        }
+        // Append new linkId
+        linkIds.push(linkId);
+        await env.KV.put(creatorKey, JSON.stringify(linkIds));
 
         return new Response(JSON.stringify({ linkId }), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
         });
     } catch (err) {
+        console.error('Create error:', err);
         return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
