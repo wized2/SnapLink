@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>SnapLink</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
     <style>
-        /* --- CSS Variables (Light/Dark) --- */
+        /* ─── CSS Variables (Light/Dark) ─── */
         :root {
             --bg-primary: #0e0e12;
             --bg-secondary: #14141b;
@@ -30,6 +30,10 @@
             --toast-success-bg: #14281e;
             --toast-success-border: #3dcd7a;
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --surface-container-high: #1a1a26;
+            --surface-container-lowest: #111118;
+            --on-surface-variant: #8a8a99;
+            --outline-variant: #2a2a36;
         }
 
         [data-theme="light"] {
@@ -52,9 +56,13 @@
             --toast-success-bg: #e6f4ea;
             --toast-success-border: #1e8e3e;
             --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --surface-container-high: #e8ecf8;
+            --surface-container-lowest: #ffffff;
+            --on-surface-variant: #404753;
+            --outline-variant: #9fa5b4;
         }
 
-        /* --- Reset & Base --- */
+        /* ─── Reset & Base ─── */
         * {
             margin: 0;
             padding: 0;
@@ -81,11 +89,11 @@
             background: var(--bg-secondary);
             min-height: 100vh;
             position: relative;
-            padding-bottom: 80px;
+            padding-bottom: 100px; /* space for bottom switcher */
             transition: background 0.3s;
         }
 
-        /* --- App Bar --- */
+        /* ─── App Bar ─── */
         .app-bar {
             display: flex;
             align-items: center;
@@ -121,15 +129,15 @@
             background: var(--border-color);
         }
 
-        /* --- Tab Content --- */
+        /* ─── Tab Content ─── */
         .tab-content {
             flex: 1;
             padding: 12px 16px 20px;
-            display: none;
+            display: none; /* hidden by default */
             animation: fadeIn 0.25s ease;
         }
         .tab-content.active {
-            display: block;
+            display: block; /* only shown when active */
         }
         @keyframes fadeIn {
             from {
@@ -142,54 +150,83 @@
             }
         }
 
-        /* --- Bottom Navigation --- */
-        .bottom-nav {
+        /* ─── Bottom Switcher (Pill Style) ─── */
+        .bottom-overlay {
             position: fixed;
-            bottom: 0;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             max-width: 600px;
-            width: 100%;
-            background: var(--bg-nav);
+            width: calc(100% - 40px);
             display: flex;
-            border-top: 1px solid var(--border-color);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            justify-content: center;
             z-index: 20;
-            padding: 6px 0 env(safe-area-inset-bottom);
-            transition: background 0.3s, border-color 0.3s;
-        }
-        .bottom-nav button {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 500;
-            padding: 8px 0 4px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-family: inherit;
-        }
-        .bottom-nav button .material-symbols-outlined {
-            font-size: 28px;
-            transition: 0.2s;
-        }
-        .bottom-nav button span:last-child {
-            font-size: 11px;
-        }
-        .bottom-nav button.active {
-            color: var(--accent-color);
-        }
-        .bottom-nav button.active .material-symbols-outlined {
-            font-variation-settings: 'FILL' 1;
         }
 
-        /* --- Cards --- */
+        .mode-switch {
+            display: flex;
+            gap: 8px;
+            background: var(--surface-container-high);
+            padding: 8px;
+            border-radius: 100px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2), 0 0 0 1px var(--outline-variant);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .mode-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 12px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 1rem;
+            background: transparent;
+            color: var(--on-surface-variant);
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+            font-family: inherit;
+        }
+
+        .mode-option:hover {
+            transform: scale(1.02);
+        }
+
+        .mode-option:active {
+            transform: scale(0.98);
+        }
+
+        .mode-option .material-symbols-outlined {
+            font-size: 24px;
+        }
+
+        .mode-option.active {
+            background: var(--surface-container-lowest);
+            color: var(--text-primary);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        }
+
+        @media (max-width: 460px) {
+            .mode-option {
+                font-size: 0.9rem;
+                padding: 12px 8px;
+            }
+            .mode-option .material-symbols-outlined {
+                font-size: 20px;
+            }
+            .bottom-overlay {
+                width: calc(100% - 20px);
+                bottom: 16px;
+            }
+        }
+
+        /* ─── Cards ─── */
         .card {
             background: var(--bg-card);
             border-radius: 20px;
@@ -210,7 +247,7 @@
             margin-bottom: 16px;
         }
 
-        /* --- Form Inputs --- */
+        /* ─── Form Inputs ─── */
         .input-group {
             display: flex;
             flex-direction: column;
@@ -276,7 +313,7 @@
             border-radius: 14px;
         }
 
-        /* --- Link Display --- */
+        /* ─── Link Display ─── */
         .link-box {
             display: flex;
             gap: 8px;
@@ -302,7 +339,7 @@
             border-radius: 14px;
         }
 
-        /* --- Toast Notifications --- */
+        /* ─── Toast Notifications ─── */
         .toast {
             padding: 12px 16px;
             border-radius: 16px;
@@ -328,7 +365,7 @@
             color: #1e8e3e;
         }
 
-        /* --- Links List --- */
+        /* ─── Links List ─── */
         .link-item {
             background: var(--bg-card);
             border-radius: 18px;
@@ -403,7 +440,7 @@
             margin-bottom: 12px;
         }
 
-        /* --- Viewer Mode --- */
+        /* ─── Viewer Mode ─── */
         .viewer-container {
             display: flex;
             flex-direction: column;
@@ -438,7 +475,7 @@
             color: var(--text-secondary);
         }
 
-        /* --- Utility --- */
+        /* ─── Utility ─── */
         video {
             position: fixed;
             top: -9999px;
@@ -518,17 +555,17 @@
             <div id="linksList"></div>
         </section>
 
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav" role="tablist">
-            <button class="active" data-tab="create" role="tab" aria-selected="true">
-                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-                <span>Create</span>
-            </button>
-            <button data-tab="links" role="tab" aria-selected="false">
-                <span class="material-symbols-outlined" aria-hidden="true">link</span>
-                <span>Links</span>
-            </button>
-        </nav>
+        <!-- Bottom Switcher (Pill Style) -->
+        <div class="bottom-overlay">
+            <div class="mode-switch">
+                <button class="mode-option active" id="modeCreate">
+                    <span class="material-symbols-outlined">add_circle</span> Create
+                </button>
+                <button class="mode-option" id="modeLinks">
+                    <span class="material-symbols-outlined">link</span> Links
+                </button>
+            </div>
+        </div>
 
         <!-- Viewer Mode -->
         <div id="viewer" class="hidden" style="flex:1; display:none; flex-direction:column; justify-content:center; padding:20px;">
@@ -586,7 +623,8 @@
 
             const tabCreate = document.getElementById('tab-create');
             const tabLinks = document.getElementById('tab-links');
-            const navBtns = $$('.bottom-nav button');
+            const modeCreate = document.getElementById('modeCreate');
+            const modeLinks = document.getElementById('modeLinks');
             const redirectUrlInput = document.getElementById('redirectUrl');
             const creatorEmailInput = document.getElementById('creatorEmail');
             const createBtn = document.getElementById('createBtn');
@@ -642,12 +680,16 @@
             }
 
             // ─── Load & Render Links ───
+            let linksLoaded = false;
+
             async function loadLinks() {
+                if (linksLoaded) return;
                 try {
                     const res = await apiFetch(`/links?creatorId=${encodeURIComponent(creatorId)}`);
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
                     renderLinks(data.links || []);
+                    linksLoaded = true;
                 } catch (err) {
                     console.error('❌ Failed to load links:', err);
                     linksList.innerHTML =
@@ -746,6 +788,7 @@
                     });
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     showToast(createToast, `Link ${linkId} deleted.`, 'success');
+                    linksLoaded = false;
                     loadLinks();
                 } catch (err) {
                     console.error('❌ Delete error:', err);
@@ -761,6 +804,7 @@
                     });
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     showToast(createToast, `Captures cleared for ${linkId}.`, 'success');
+                    linksLoaded = false;
                     loadLinks();
                 } catch (err) {
                     console.error('❌ Clear captures error:', err);
@@ -802,7 +846,7 @@
                         generatedLink.value = fullLink;
                         linkResult.classList.remove('hidden');
                         showToast(createToast, 'Link created!', 'success');
-                        loadLinks(); // refresh links list
+                        linksLoaded = false; // force reload if we later switch to links
                     } else {
                         showToast(createToast, 'Error: ' + (data.error || 'Unknown error'), 'error');
                     }
@@ -828,25 +872,28 @@
                 }
             });
 
-            // ─── Tab Switching ───
-            navBtns.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const tab = btn.dataset.tab;
-                    $$('.tab-content').forEach((el) => el.classList.remove('active'));
-                    document.getElementById('tab-' + tab).classList.add('active');
-                    navBtns.forEach((b) => {
-                        b.classList.remove('active');
-                        b.setAttribute('aria-selected', 'false');
-                    });
-                    btn.classList.add('active');
-                    btn.setAttribute('aria-selected', 'true');
+            // ─── Tab Switching (strict) ───
+            function setActiveTab(tabName) {
+                // Remove active class from both tabs
+                tabCreate.classList.remove('active');
+                tabLinks.classList.remove('active');
+                modeCreate.classList.remove('active');
+                modeLinks.classList.remove('active');
 
-                    // Load links when switching to the Links tab
-                    if (tab === 'links') {
-                        loadLinks();
-                    }
-                });
-            });
+                // Add active class to the selected one
+                if (tabName === 'create') {
+                    tabCreate.classList.add('active');
+                    modeCreate.classList.add('active');
+                } else {
+                    tabLinks.classList.add('active');
+                    modeLinks.classList.add('active');
+                    // Load links when switching to Links tab
+                    loadLinks();
+                }
+            }
+
+            modeCreate.addEventListener('click', () => setActiveTab('create'));
+            modeLinks.addEventListener('click', () => setActiveTab('links'));
 
             // ─── Viewer Initialization ───
             async function initViewer() {
@@ -856,7 +903,7 @@
 
                 // Hide dashboard, show viewer with loading
                 document.querySelector('.app-bar').style.display = 'none';
-                document.querySelector('.bottom-nav').style.display = 'none';
+                document.querySelector('.bottom-overlay').style.display = 'none';
                 $$('.tab-content').forEach((el) => (el.style.display = 'none'));
                 viewer.classList.remove('hidden');
                 viewer.style.display = 'flex';
@@ -1061,16 +1108,10 @@
                 if (!isViewer) {
                     // Show dashboard
                     document.querySelector('.app-bar').style.display = 'flex';
-                    document.querySelector('.bottom-nav').style.display = 'flex';
+                    document.querySelector('.bottom-overlay').style.display = 'flex';
                     $$('.tab-content').forEach((el) => (el.style.display = 'block'));
-                    tabCreate.classList.add('active');
-                    tabLinks.classList.remove('active');
-                    navBtns.forEach((b) => b.classList.remove('active'));
-                    document.querySelector('.bottom-nav button[data-tab="create"]')?.classList.add('active');
-                    // Load links only when needed, not on initial load to save API call
-                    // We'll load on tab switch or after creating a link.
-                    // For initial, we can optionally load if there are links.
-                    // We'll let the user switch to links tab to load.
+                    // Start with the Create tab active
+                    setActiveTab('create');
                 }
             })();
         })();
