@@ -1,11 +1,8 @@
 /**
  * POST /api/capture
  * Receives multipart/form-data with frontImage, backImage, linkId and metadata.
- * Uploads images to R2, stores URLs in KV, and enforces a 4‑capture limit.
+ * Uploads images to R2 using the native binding, stores URLs in KV.
  */
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-
 export async function onRequest(context) {
     const { request, env } = context;
 
@@ -17,7 +14,6 @@ export async function onRequest(context) {
     }
 
     try {
-        // Parse multipart form data
         const formData = await request.formData();
         const linkId = formData.get('linkId');
         const frontFile = formData.get('frontImage');
@@ -48,21 +44,10 @@ export async function onRequest(context) {
             linkData = linkDataRaw;
         }
 
-        // Parse metadata
         let metadata = {};
         try {
             metadata = JSON.parse(metadataRaw);
         } catch (_) {}
-
-        // Configure R2 client using environment bindings
-        const s3 = new S3Client({
-            region: 'auto',
-            endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-            credentials: {
-                accessKeyId: env.R2_ACCESS_KEY_ID,
-                secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-            },
-        });
 
         // Helper: upload a file to R2 and return a public URL
         async function uploadToR2(file, prefix) {
@@ -75,25 +60,17 @@ export async function onRequest(context) {
             const arrayBuffer = await file.arrayBuffer();
             const buffer = new Uint8Array(arrayBuffer);
 
-            // Upload to R2
-            const command = new PutObjectCommand({
-                Bucket: 'snaplink-images',
-                Key: key,
-                Body: buffer,
-                ContentType: 'image/jpeg',
-                CacheControl: 'public, max-age=31536000',
+            // Upload using the built‑in R2 binding
+            await env.BUCKET.put(key, buffer, {
+                httpMetadata: {
+                    contentType: 'image/jpeg',
+                    cacheControl: 'public, max-age=31536000',
+                },
             });
-            await s3.send(command);
 
-            // Generate a presigned URL (valid for 1 year)
-            const getCommand = new PutObjectCommand({
-                Bucket: 'snaplink-images',
-                Key: key,
-            });
-            // For public access, you can construct the URL directly if bucket is public
-            // Alternatively, use a signed URL:
-            // const url = await getSignedUrl(s3, getCommand, { expiresIn: 31536000 });
-            // For simplicity, we'll use the public URL format (bucket must be public or via custom domain)
+            // Generate a public URL – bucket must be public, or use signed URL
+            // For simplicity, we construct the URL (assuming bucket is public)
+            // You can also use signed URLs: const signedUrl = await env.BUCKET.get(key).then(obj => obj?.getSignedUrl({ expiresIn: 86400 }));
             const publicUrl = `https://snaplink-images.${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${key}`;
             return publicUrl;
         }
@@ -112,7 +89,7 @@ export async function onRequest(context) {
             metadata,
         };
 
-        // Enforce 4‑capture limit (remove oldest)
+        // Enforce 4‑capture limit
         let captures = linkData.captures || [];
         if (captures.length >= 4) {
             captures.shift();
@@ -120,7 +97,7 @@ export async function onRequest(context) {
         captures.push(capture);
         linkData.captures = captures;
 
-        // Save back to KV (preserve TTL)
+        // Save back to KV
         await env.KV.put(linkKey, JSON.stringify(linkData));
 
         return new Response(JSON.stringify({
