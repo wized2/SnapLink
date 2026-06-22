@@ -6,10 +6,6 @@
   "scripts": {
     "dev": "wrangler pages dev . --kv=KV --r2=BUCKET"
   },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.750.0",
-    "@aws-sdk/s3-request-presigner": "^3.750.0"
-  },
   "devDependencies": {
     "wrangler": "^3.107.0"
   }
